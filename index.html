@@ -74,7 +74,6 @@
   <div id="tb">
     <button id="muteBtn">&#9834;</button>
     <button id="langBtn">EN</button>
-    <button id="aimBtn" title="auto aim">&#9678;</button>
     <button id="nameBtn">&#9998;</button>
   </div>
   <div id="ov"><div id="ovbox">
@@ -123,7 +122,7 @@ const STR={
   en:{sub:'EIGHT STAGES BEHIND ENEMY LINES',start:'PRESS ENTER  /  TAP TO START',
       choose:'ENTER = 1 PLAYER    2 = TWO PLAYERS (ALTERNATING)',
       name:'YOUR NAME?',namehint:'SHOWN ON THE SCORE BOARD',soldier:'SOLDIER',chname:'N = CHANGE NAME',
-      board:'BEST SOLDIERS',keys:'ARROWS / WASD = MOVE    SPACE = FIRE    G = GRENADE',
+      autoaim:'AUTO AIM — THE RIFLE FINDS THE NEAREST ENEMY',board:'BEST SOLDIERS',keys:'ARROWS / WASD = MOVE    SPACE = FIRE    G = GRENADE',
       touch:'DRAG (LEFT) = MOVE · AIM\nHOLD (RIGHT) = FIRE · SWIPE UP = GRENADE',
       stage:'STAGE',score:'SCORE',hi:'HI',lives:'LIVES',gren:'GRENADES',
       ready:'GET READY',p1:'PLAYER 1',p2:'PLAYER 2',go:'GO!',
@@ -137,7 +136,7 @@ const STR={
   sl:{sub:'OSEM STOPENJ ZA SOVRAŽNIKOVO ČRTO',start:'PRITISNI ENTER  /  TAPNI ZA START',
       choose:'ENTER = 1 IGRALEC    2 = DVA IGRALCA (IZMENIČNO)',
       name:'TVOJE IME?',namehint:'PRIKAZANO NA LESTVICI',soldier:'VOJAK',chname:'N = SPREMENI IME',
-      board:'NAJBOLJŠI VOJAKI',keys:'PUŠČICE / WASD = PREMIK    PRESLEDNICA = STREL    G = GRANATA',
+      autoaim:'SAMODEJNO MERJENJE — PUŠKA SAMA NAJDE NAJBLIŽJEGA',board:'NAJBOLJŠI VOJAKI',keys:'PUŠČICE / WASD = PREMIK    PRESLEDNICA = STREL    G = GRANATA',
       touch:'POTEG (LEVO) = PREMIK · MERJENJE\nDRŽI (DESNO) = STREL · POTEG GOR = GRANATA',
       stage:'STOPNJA',score:'TOČKE',hi:'REKORD',lives:'ŽIVLJENJA',gren:'GRANATE',
       ready:'PRIPRAVI SE',p1:'IGRALEC 1',p2:'IGRALEC 2',go:'ZDAJ!',
@@ -151,7 +150,7 @@ const STR={
   de:{sub:'ACHT STUFEN HINTER DEN FEINDLINIEN',start:'ENTER DRÜCKEN  /  TIPPEN ZUM START',
       choose:'ENTER = 1 SPIELER    2 = ZWEI SPIELER (ABWECHSELND)',
       name:'DEIN NAME?',namehint:'ERSCHEINT IN DER BESTENLISTE',soldier:'SOLDAT',chname:'N = NAME ÄNDERN',
-      board:'BESTE SOLDATEN',keys:'PFEILE / WASD = LAUFEN    LEERTASTE = FEUER    G = GRANATE',
+      autoaim:'AUTOMATISCHES ZIELEN — DAS GEWEHR FINDET DEN NÄCHSTEN',board:'BESTE SOLDATEN',keys:'PFEILE / WASD = LAUFEN    LEERTASTE = FEUER    G = GRANATE',
       touch:'ZIEHEN (LINKS) = LAUFEN · ZIELEN\nHALTEN (RECHTS) = FEUER · HOCH = GRANATE',
       stage:'STUFE',score:'PUNKTE',hi:'REKORD',lives:'LEBEN',gren:'GRANATEN',
       ready:'BEREIT MACHEN',p1:'SPIELER 1',p2:'SPIELER 2',go:'LOS!',
@@ -165,7 +164,7 @@ const STR={
   it:{sub:'OTTO LIVELLI DIETRO LE LINEE NEMICHE',start:'PREMI INVIO  /  TOCCA PER INIZIARE',
       choose:'INVIO = 1 GIOCATORE    2 = DUE GIOCATORI (A TURNO)',
       name:'IL TUO NOME?',namehint:'MOSTRATO IN CLASSIFICA',soldier:'SOLDATO',chname:'N = CAMBIA NOME',
-      board:'MIGLIORI SOLDATI',keys:'FRECCE / WASD = MUOVI    SPAZIO = FUOCO    G = GRANATA',
+      autoaim:'MIRA AUTOMATICA — IL FUCILE TROVA IL PIÙ VICINO',board:'MIGLIORI SOLDATI',keys:'FRECCE / WASD = MUOVI    SPAZIO = FUOCO    G = GRANATA',
       touch:'TRASCINA (SIN.) = MUOVI · MIRA\nTIENI (DES.) = FUOCO · SU = GRANATA',
       stage:'LIVELLO',score:'PUNTI',hi:'RECORD',lives:'VITE',gren:'GRANATE',
       ready:'PREPARATI',p1:'GIOCATORE 1',p2:'GIOCATORE 2',go:'VIA!',
@@ -179,7 +178,7 @@ const STR={
   fr:{sub:'HUIT NIVEAUX DERRIÈRE LES LIGNES',start:'APPUIE SUR ENTRÉE  /  TOUCHE POUR JOUER',
       choose:'ENTRÉE = 1 JOUEUR    2 = DEUX JOUEURS (À TOUR DE RÔLE)',
       name:'TON NOM ?',namehint:'AFFICHÉ DANS LE CLASSEMENT',soldier:'SOLDAT',chname:'N = CHANGER DE NOM',
-      board:'MEILLEURS SOLDATS',keys:'FLÈCHES / WASD = BOUGER    ESPACE = TIRER    G = GRENADE',
+      autoaim:'VISÉE AUTOMATIQUE — LE FUSIL TROUVE LE PLUS PROCHE',board:'MEILLEURS SOLDATS',keys:'FLÈCHES / WASD = BOUGER    ESPACE = TIRER    G = GRENADE',
       touch:'GLISSER (GAUCHE) = BOUGER · VISER\nMAINTENIR (DROITE) = TIRER · HAUT = GRENADE',
       stage:'NIVEAU',score:'SCORE',hi:'RECORD',lives:'VIES',gren:'GRENADES',
       ready:'PRÊT',p1:'JOUEUR 1',p2:'JOUEUR 2',go:'GO !',
@@ -202,13 +201,11 @@ function detectLang(){
 let lang=detectLang();
 function T(k){ return (STR[lang]&&STR[lang][k]) || STR.en[k] || k; }
 
-/* Auto aim. Steering and aiming with one thumb is the hard part of a one-stick
-   shooter on a phone, so on a touch device the rifle tracks the nearest enemy
-   by default and the player only has to run and hold fire. On a keyboard the
-   classic eight-way aim is the default; either can be switched with T. */
-const coarse = (()=>{ try{ return matchMedia('(pointer:coarse)').matches; }catch(e){ return false; } })();
-let autoAim = (()=>{ const v=safeLS('ruka_autoaim'); return v===null? coarse : v==='1'; })();
-function toggleAim(){ autoAim=!autoAim; safeLS('ruka_autoaim',autoAim?'1':'0'); syncChrome(); sfx.menu(); }
+/* Auto aim, everywhere. Steering and aiming at once is the hard part of a
+   one-stick shooter, and it is no less awkward on four arrow keys than on a
+   thumb, so the rifle always tracks the nearest enemy and the player only has
+   to run and hold fire. There is no setting: it was confusing to have the
+   same game aim differently depending on what you happened to open it on. */
 
 /* ---------------- audio ---------------- */
 let AC=null, muted=(safeLS('ruka_mute')==='1');
@@ -479,11 +476,10 @@ function nearestTarget(){
 function throwGrenade(){
   if(me().gren<=0) return;
   me().gren--;
-  /* The coin-op quirk: a grenade flies straight ahead, never where you aim.
-     With auto aim on that would be maddening, so there it follows the barrel. */
-  const gx = autoAim? P.ax*300 : 0;
-  const gy = autoAim? P.ay*300 : -300;
-  grenades.push({x:P.x+(autoAim?P.ax*14:0), y:P.y-14, vx:gx, vy:gy, t:0, fuse:0.72});
+  /* The coin-op threw grenades straight ahead regardless of aim. With the
+     rifle locked onto a target that would be maddening, so it follows the
+     barrel instead. */
+  grenades.push({x:P.x+P.ax*14, y:P.y-14, vx:P.ax*300, vy:P.ay*300, t:0, fuse:0.72});
   sfx.throw();
 }
 function explode(x,y,r){
@@ -628,12 +624,10 @@ function update(dt){
     /* where the rifle points: at the nearest enemy, or where you walk */
     let tx=P.dx, ty=P.dy;
     P.lock=null;
-    if(autoAim){
-      const t=nearestTarget();
-      if(t){
-        const ddx=t.x-P.x, ddy=t.y-P.y, L=Math.hypot(ddx,ddy)||1;
-        tx=ddx/L; ty=ddy/L; P.lock=t;
-      }
+    const t=nearestTarget();
+    if(t){
+      const ddx=t.x-P.x, ddy=t.y-P.y, L=Math.hypot(ddx,ddy)||1;
+      tx=ddx/L; ty=ddy/L; P.lock=t;
     }
     /* swing the barrel round rather than snapping it */
     const k=Math.min(1, dt*16);
@@ -819,7 +813,7 @@ function drawPlayer(){
   const y=worldY(P.y);
   if(P.inv>0 && Math.floor(perf/70)%2===0) return;
   soldier(P.x,y,P.ax,P.ay,'#3f6a2c','#9ad284',P.walk,'#2c4a1e');
-  if(autoAim && P.lock && !P.lock.dead){
+  if(P.lock && !P.lock.dead){
     const ty=worldY(P.lock.y);
     X.strokeStyle='rgba(255,210,59,.75)'; X.lineWidth=2;
     X.beginPath(); X.arc(P.lock.x,ty,13,0,TAU); X.stroke();
@@ -961,7 +955,7 @@ function drawTitle(){
   if(Math.floor(perf/500)%2===0) shadowText(T('start'),W/2,H-96,15,'#ffffff');
   shadowText(T('choose'),W/2,H-72,10,'#c8d08a');
   shadowText(touchOnly?T('touch').split('\n')[0]:T('keys'),W/2,H-46,9,'#7a8a5a');
-  shadowText(autoAim?T('aimon'):T('aimoff'),W/2,H-28,10,autoAim?'#ffd23b':'#7a8a5a');
+  shadowText(T('autoaim'),W/2,H-28,10,'#ffd23b');
 }
 function drawEnd(){
   const p=me();
@@ -1075,14 +1069,11 @@ nmInput.addEventListener('keyup',e=>e.stopPropagation());
 /* ---------------- chrome ---------------- */
 const tb=document.getElementById('tb');
 const muteBtn=document.getElementById('muteBtn'), langBtn=document.getElementById('langBtn'),
-      nameBtn=document.getElementById('nameBtn'), aimBtn=document.getElementById('aimBtn');
+      nameBtn=document.getElementById('nameBtn');
 function syncChrome(){
   langBtn.textContent=lang.toUpperCase();
   muteBtn.textContent=muted?'♪̸':'♪';
   padhint.textContent=T('touch');
-  aimBtn.textContent=autoAim?'◉':'◎';
-  aimBtn.style.color=autoAim?'#ffd23b':'#9ad284';
-  aimBtn.title=autoAim?T('aimon'):T('aimoff');
   try{ document.documentElement.lang=lang; }catch(e){}
 }
 function cycleLang(){
@@ -1092,7 +1083,6 @@ function cycleLang(){
 muteBtn.addEventListener('click',e=>{e.preventDefault(); ac(); toggleMute();});
 langBtn.addEventListener('click',e=>{e.preventDefault(); ac(); cycleLang();});
 nameBtn.addEventListener('click',e=>{e.preventDefault(); ac(); openName();});
-aimBtn.addEventListener('click',e=>{e.preventDefault(); ac(); toggleAim(); say(autoAim?T('aimon'):T('aimoff'));});
 
 function hotKey(e){
   const k=e.key;
@@ -1102,7 +1092,6 @@ function hotKey(e){
     if(k==='n'||k==='N'){ openName(); return; }
     if(k==='2'&&state==='title'){ if(!playerName){openName();return;} startGame(true); inputLock=0.4; return; }
   }
-  if(k==='t'||k==='T'){ toggleAim(); say(autoAim?T('aimon'):T('aimoff')); return; }
   if(k==='p'||k==='P'){ if(state==='play') paused=!paused; return; }
   if(k==='Enter'||k===' ') anyTap();
 }
@@ -1144,7 +1133,7 @@ window.__game={
   get boardState(){return boardState;}, get touchOnly(){return touchOnly;},
   get lang(){return lang;}, setLang:l=>{lang=l;syncChrome();},
   ctl, T,
-  get autoAim(){return autoAim;}, toggleAim, nearestTarget
+  nearestTarget
 };
 </script>
 <script>
