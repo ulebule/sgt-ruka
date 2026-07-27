@@ -74,6 +74,7 @@
   <div id="tb">
     <button id="muteBtn">&#9834;</button>
     <button id="langBtn">EN</button>
+    <button id="aimBtn" title="auto aim">&#9678;</button>
     <button id="nameBtn">&#9998;</button>
   </div>
   <div id="ov"><div id="ovbox">
@@ -200,6 +201,14 @@ function detectLang(){
 }
 let lang=detectLang();
 function T(k){ return (STR[lang]&&STR[lang][k]) || STR.en[k] || k; }
+
+/* Auto aim. Steering and aiming with one thumb is the hard part of a one-stick
+   shooter on a phone, so on a touch device the rifle tracks the nearest enemy
+   by default and the player only has to run and hold fire. On a keyboard the
+   classic eight-way aim is the default; either can be switched with T. */
+const coarse = (()=>{ try{ return matchMedia('(pointer:coarse)').matches; }catch(e){ return false; } })();
+let autoAim = (()=>{ const v=safeLS('ruka_autoaim'); return v===null? coarse : v==='1'; })();
+function toggleAim(){ autoAim=!autoAim; safeLS('ruka_autoaim',autoAim?'1':'0'); syncChrome(); sfx.menu(); }
 
 /* ---------------- audio ---------------- */
 let AC=null, muted=(safeLS('ruka_mute')==='1');
@@ -370,7 +379,7 @@ function buildStage(n){
 
 /* ---------------- the player ---------------- */
 function makePlayer(){
-  return {x:W/2, y:-60, dx:0, dy:-1, fireT:0, inv:2.0, alive:true, dieT:0, walk:0};
+  return {x:W/2, y:-60, dx:0, dy:-1, ax:0, ay:-1, fireT:0, inv:2.0, alive:true, dieT:0, walk:0, lock:null};
 }
 let P=makePlayer();
 
@@ -449,14 +458,32 @@ function stopsBullets(o){ return o.type!=='sandbag' || true; }
 /* ---------------- shooting ---------------- */
 function fire(){
   const sp=430;
-  bullets.push({x:P.x+P.dx*12, y:P.y+P.dy*12, vx:P.dx*sp, vy:P.dy*sp, life:1.4});
+  bullets.push({x:P.x+P.ax*12, y:P.y+P.ay*12, vx:P.ax*sp, vy:P.ay*sp, life:1.4});
   sfx.shot();
+}
+/* the closest thing worth shooting, ignoring anyone ducked in a trench */
+function nearestTarget(){
+  let best=null, bd=430*430;
+  for(const e of enemies){
+    if(e.dead) continue;
+    if(e.type==='trench' && !e.up) continue;
+    const d=dist2(e.x,e.y,P.x,P.y);
+    if(d<bd){ bd=d; best=e; }
+  }
+  if(gate&&gate.officer&&!gate.officer.dead){
+    const d=dist2(gate.officer.x,gate.officer.y,P.x,P.y);
+    if(d<bd){ bd=d; best=gate.officer; }
+  }
+  return best;
 }
 function throwGrenade(){
   if(me().gren<=0) return;
   me().gren--;
-  /* the quirk worth keeping: grenades always fly forward, never where you aim */
-  grenades.push({x:P.x, y:P.y-14, vy:-300, t:0, fuse:0.72});
+  /* The coin-op quirk: a grenade flies straight ahead, never where you aim.
+     With auto aim on that would be maddening, so there it follows the barrel. */
+  const gx = autoAim? P.ax*300 : 0;
+  const gy = autoAim? P.ay*300 : -300;
+  grenades.push({x:P.x+(autoAim?P.ax*14:0), y:P.y-14, vx:gx, vy:gy, t:0, fuse:0.72});
   sfx.throw();
 }
 function explode(x,y,r){
@@ -598,6 +625,21 @@ function update(dt){
     }
     P.x=clamp(P.x,14,W-14);
     P.y=clamp(P.y, camY-H+40, camY-24);       /* stay on screen */
+    /* where the rifle points: at the nearest enemy, or where you walk */
+    let tx=P.dx, ty=P.dy;
+    P.lock=null;
+    if(autoAim){
+      const t=nearestTarget();
+      if(t){
+        const ddx=t.x-P.x, ddy=t.y-P.y, L=Math.hypot(ddx,ddy)||1;
+        tx=ddx/L; ty=ddy/L; P.lock=t;
+      }
+    }
+    /* swing the barrel round rather than snapping it */
+    const k=Math.min(1, dt*16);
+    P.ax+=(tx-P.ax)*k; P.ay+=(ty-P.ay)*k;
+    const AL=Math.hypot(P.ax,P.ay)||1; P.ax/=AL; P.ay/=AL;
+
     if(P.inv>0) P.inv-=dt;
     P.fireT-=dt;
     if(ctl.fire && P.fireT<=0){ fire(); P.fireT=0.16; }
@@ -776,7 +818,18 @@ function drawPlayer(){
   if(!P.alive) return;
   const y=worldY(P.y);
   if(P.inv>0 && Math.floor(perf/70)%2===0) return;
-  soldier(P.x,y,P.dx,P.dy,'#3f6a2c','#9ad284',P.walk,'#2c4a1e');
+  soldier(P.x,y,P.ax,P.ay,'#3f6a2c','#9ad284',P.walk,'#2c4a1e');
+  if(autoAim && P.lock && !P.lock.dead){
+    const ty=worldY(P.lock.y);
+    X.strokeStyle='rgba(255,210,59,.75)'; X.lineWidth=2;
+    X.beginPath(); X.arc(P.lock.x,ty,13,0,TAU); X.stroke();
+    X.beginPath();
+    X.moveTo(P.lock.x-18,ty); X.lineTo(P.lock.x-9,ty);
+    X.moveTo(P.lock.x+9,ty);  X.lineTo(P.lock.x+18,ty);
+    X.moveTo(P.lock.x,ty-18); X.lineTo(P.lock.x,ty-9);
+    X.moveTo(P.lock.x,ty+9);  X.lineTo(P.lock.x,ty+18);
+    X.stroke();
+  }
 }
 function drawGate(){
   if(!gate) return;
@@ -908,6 +961,7 @@ function drawTitle(){
   if(Math.floor(perf/500)%2===0) shadowText(T('start'),W/2,H-96,15,'#ffffff');
   shadowText(T('choose'),W/2,H-72,10,'#c8d08a');
   shadowText(touchOnly?T('touch').split('\n')[0]:T('keys'),W/2,H-46,9,'#7a8a5a');
+  shadowText(autoAim?T('aimon'):T('aimoff'),W/2,H-28,10,autoAim?'#ffd23b':'#7a8a5a');
 }
 function drawEnd(){
   const p=me();
@@ -1019,12 +1073,16 @@ nmInput.addEventListener('keydown',e=>{ e.stopPropagation();
 nmInput.addEventListener('keyup',e=>e.stopPropagation());
 
 /* ---------------- chrome ---------------- */
+const tb=document.getElementById('tb');
 const muteBtn=document.getElementById('muteBtn'), langBtn=document.getElementById('langBtn'),
-      nameBtn=document.getElementById('nameBtn');
+      nameBtn=document.getElementById('nameBtn'), aimBtn=document.getElementById('aimBtn');
 function syncChrome(){
   langBtn.textContent=lang.toUpperCase();
   muteBtn.textContent=muted?'♪̸':'♪';
   padhint.textContent=T('touch');
+  aimBtn.textContent=autoAim?'◉':'◎';
+  aimBtn.style.color=autoAim?'#ffd23b':'#9ad284';
+  aimBtn.title=autoAim?T('aimon'):T('aimoff');
   try{ document.documentElement.lang=lang; }catch(e){}
 }
 function cycleLang(){
@@ -1034,6 +1092,7 @@ function cycleLang(){
 muteBtn.addEventListener('click',e=>{e.preventDefault(); ac(); toggleMute();});
 langBtn.addEventListener('click',e=>{e.preventDefault(); ac(); cycleLang();});
 nameBtn.addEventListener('click',e=>{e.preventDefault(); ac(); openName();});
+aimBtn.addEventListener('click',e=>{e.preventDefault(); ac(); toggleAim(); say(autoAim?T('aimon'):T('aimoff'));});
 
 function hotKey(e){
   const k=e.key;
@@ -1043,6 +1102,7 @@ function hotKey(e){
     if(k==='n'||k==='N'){ openName(); return; }
     if(k==='2'&&state==='title'){ if(!playerName){openName();return;} startGame(true); inputLock=0.4; return; }
   }
+  if(k==='t'||k==='T'){ toggleAim(); say(autoAim?T('aimon'):T('aimoff')); return; }
   if(k==='p'||k==='P'){ if(state==='play') paused=!paused; return; }
   if(k==='Enter'||k===' ') anyTap();
 }
@@ -1062,6 +1122,10 @@ function frame(ts){
   const N=2, h=dt/N;
   for(let i=0;i<N;i++) update(h);
   render();
+  /* the buttons sat on top of the stage counter and swallowed shots aimed at
+     the top right — they belong to the menus, not to the battlefield */
+  const showChrome = (state==='title'||state==='over'||state==='win'||paused);
+  tb.style.display = showChrome? 'flex':'none';
   padhint.classList.toggle('on', touchOnly && (state==='title'||state==='ready'));
 }
 syncChrome();
@@ -1079,7 +1143,8 @@ window.__game={
   get players(){return players;}, get cur(){return cur;}, get twoPlayers(){return twoPlayers;},
   get boardState(){return boardState;}, get touchOnly(){return touchOnly;},
   get lang(){return lang;}, setLang:l=>{lang=l;syncChrome();},
-  ctl, T
+  ctl, T,
+  get autoAim(){return autoAim;}, toggleAim, nearestTarget
 };
 </script>
 <script>

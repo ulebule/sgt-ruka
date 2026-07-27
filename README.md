@@ -19,8 +19,16 @@ fortress gate that pours out soldiers behind a fleeing officer.
 
 Arrow keys or `WASD` move — and the direction you walk is the direction you
 shoot, exactly as a one-stick coin-op did it. `SPACE` fires, `G` throws a
-grenade, `P` pauses, `M` toggles sound, `L` cycles the language and `N` changes
-your name.
+grenade, `P` pauses, `T` toggles auto aim, `M` toggles sound, `L` cycles the
+language and `N` changes your name.
+
+**Auto aim.** Steering and aiming with a single thumb is the hard part of a
+one-stick shooter on a phone, so on a touch device the rifle tracks the nearest
+enemy by default: run where you like, hold fire, and the barrel swings round on
+its own. A crosshair marks the locked target. On a keyboard the classic
+eight-way aim is the default instead, and `T` (or the ◉ button on the title
+screen) switches either way. With auto aim on, grenades follow the barrel
+rather than flying straight ahead.
 
 Pushing forward speeds up the advance, so you set your own pace between careful
 and reckless.
