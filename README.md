@@ -36,6 +36,10 @@ and reckless.
 drag to walk and aim. The right half is the trigger: hold to fire, swipe up to
 throw a grenade.
 
+The advance never reverses, so an enemy who falls behind the bottom of the
+screen is out of the battle and is dropped. The gate finale waits only for
+what is on screen.
+
 ## The fight
 
 The rifle has unlimited ammunition; grenades do not, and you start each life

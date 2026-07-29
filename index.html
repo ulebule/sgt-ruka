@@ -330,8 +330,12 @@ const THEMES=[
   {id:'fort',   grass:'#3a3430', grass2:'#443c36', path:'#6a5c50', tree:'#2a241f', rock:'#605a54'}
 ];
 const STAGES=8;
-const stageTheme=n=>THEMES[(n-1)%THEMES.length];
+const stageTheme=n=>THEMES[(Math.max(1,n|0)-1)%THEMES.length];
 const STAGE_LEN=2600;          // world pixels of advance before the gate
+/* How far below the bottom of the screen an enemy has to fall before he
+   counts as left behind. The advance never reverses, so past this line he can
+   never be reached, never be shot and never be part of the fight again. */
+const LOST_BEHIND=20;
 
 let camY=0, worldTop=0;
 let obstacles=[], enemies=[], bullets=[], ebullets=[], grenades=[], booms=[], pickups=[], prisoners=[];
@@ -579,8 +583,11 @@ function gateUpdate(dt){
     if(o.flee){ o.y-=90*dt; if(o.y<g.y-80) g.officer=null; }
     else{ o.x+=Math.sin(o.t*2)*40*dt; }
   }
-  const alive=enemies.filter(e=>!e.dead).length;
-  if(g.spawned>=g.total && alive===0 && !g.done){ g.done=true; stageCleared(); }
+  /* Count only what is on screen. Anything below has already been dropped,
+     and anything woken above the frozen camera can never come down, so
+     waiting for either would be waiting for ever. */
+  const inPlay=enemies.filter(e=>!e.dead && e.y>camY-H).length;
+  if(g.spawned>=g.total && inPlay===0 && !g.done){ g.done=true; stageCleared(); }
 }
 
 /* ---------------- update ---------------- */
@@ -643,7 +650,12 @@ function update(dt){
 
   wakeEnemies();
   for(const e of enemies) enemyUpdate(e,dt);
-  enemies=enemies.filter(e=>!e.dead||e.deadT<0.5);
+  /* Left-behind enemies used to stay in the list for ever. A trench soldier
+     never moves and the advance outruns a runner, so by the gate there were
+     almost always a few alive somewhere behind the camera — and the finale,
+     which waited for every enemy to be dead, could never end. The stage hung
+     with an open gate and an empty screen. They are dropped here instead. */
+  enemies=enemies.filter(e=>(!e.dead||e.deadT<0.5) && e.y<camY+LOST_BEHIND);
   gateUpdate(dt);
 
   /* --- bullets --- */
