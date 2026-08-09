@@ -77,6 +77,20 @@ Share → *Add to Home Screen*), and it then opens standalone. A service worker
 caches the page, so after the first visit it runs with no connection at all —
 the score board naturally needs the network and falls back to local scores.
 
+## The left edge
+
+A stroke that starts hard against the left edge of the screen and travels
+right is the browser's *go back* gesture, and on a phone it is almost always a
+thumb that drifted too far — it throws you out of the page mid-game. That one
+stroke is swallowed here, and nothing else: not the right edge, not vertical
+swipes, not pull-to-refresh, not taps. The page's own touch handlers still see
+it, because `preventDefault` does not stop propagation, so steering from the
+edge keeps working.
+
+If the phone is set to Android's gesture navigation, the system claims the
+same stroke before the browser ever sees it and no web page can block that.
+Adding the game to the home screen is the way round it.
+
 ## Licence
 
 MIT

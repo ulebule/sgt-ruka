@@ -15,7 +15,7 @@
 <style>
   html,body{margin:0;height:100%;background:#000;overflow:hidden;
     font-family:"Courier New",monospace;-webkit-user-select:none;user-select:none;
-    -webkit-tap-highlight-color:transparent;touch-action:none;}
+    -webkit-tap-highlight-color:transparent;touch-action:none;overscroll-behavior-x:none;}
   #wrap{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#000;}
   #stage{position:relative;width:min(100vw,75vh);aspect-ratio:480/640;
     box-shadow:0 0 60px rgba(90,160,80,.20),0 0 0 4px #1c2a14;
@@ -1155,6 +1155,50 @@ window.__game={
   var ok = location.protocol==='https:' || location.hostname==='localhost' || location.hostname==='127.0.0.1';
   if(!ok) return;
   addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });
+})();
+</script>
+
+<script>
+/* ---------------------------------------------------------------------------
+   Left-edge swipe guard (Android / Chrome).
+
+   A stroke that starts hard against the left edge and travels right is the
+   browser's "go back" gesture. In a game that is almost always a thumb that
+   drifted too far, and it throws the player out of the page. This swallows the
+   browser's default for exactly that stroke and nothing else: not the right
+   edge, not vertical swipes, not pull-to-refresh, not taps. The game's own
+   handlers still receive the touch, because preventDefault does not stop
+   propagation — so steering from the left edge keeps working.
+
+   One honest limit: if the phone is set to Android's gesture navigation, the
+   system takes that same stroke before Chrome ever sees it, and no web page
+   can block it. Installing the game to the home screen is the way round that.
+--------------------------------------------------------------------------- */
+(function(){
+  var EDGE = 28;               /* px from the left edge that count as "the edge" */
+  var id = null, x0 = 0, y0 = 0;
+  function start(e){
+    if(id !== null) return;
+    var t = e.changedTouches[0];
+    if(t.clientX <= EDGE){ id = t.identifier; x0 = t.clientX; y0 = t.clientY; }
+  }
+  function move(e){
+    if(id === null) return;
+    for(var i = 0; i < e.changedTouches.length; i++){
+      var t = e.changedTouches[i];
+      if(t.identifier !== id) continue;
+      var dx = t.clientX - x0, dy = t.clientY - y0;
+      if(dx > 3 && dx > Math.abs(dy) && e.cancelable) e.preventDefault();
+    }
+  }
+  function end(e){
+    for(var i = 0; i < e.changedTouches.length; i++)
+      if(e.changedTouches[i].identifier === id){ id = null; }
+  }
+  addEventListener('touchstart',  start, {passive:false, capture:true});
+  addEventListener('touchmove',   move,  {passive:false, capture:true});
+  addEventListener('touchend',    end,   {passive:false, capture:true});
+  addEventListener('touchcancel', end,   {passive:false, capture:true});
 })();
 </script>
 </body>
