@@ -131,7 +131,7 @@ const STR={
       over:'GAME OVER',reached:'STAGE REACHED',win:'MISSION COMPLETE!',
       winsub:'ALL EIGHT STAGES BEHIND YOU',again:'PRESS ENTER FOR A NEW GAME',
       sending:'SENDING…',sent:'SAVED ONLINE!',failed:'OFFLINE — SAVED LOCALLY',
-      offline:'OFFLINE — LOCAL SCORES ONLY',loading:'LOADING BOARD…',newrec:'NEW RECORD!',
+      offline:'OFFLINE — LOCAL SCORES ONLY',empty:'ONLINE BOARD IS EMPTY — BE THE FIRST!',loading:'LOADING BOARD…',newrec:'NEW RECORD!',
       extra:'EXTRA LIFE!',pause:'PAUSED'},
   sl:{sub:'OSEM STOPENJ ZA SOVRAŽNIKOVO ČRTO',start:'PRITISNI ENTER  /  TAPNI ZA START',
       choose:'ENTER = 1 IGRALEC    2 = DVA IGRALCA (IZMENIČNO)',
@@ -145,7 +145,7 @@ const STR={
       over:'KONEC IGRE',reached:'DOSEŽENA STOPNJA',win:'MISIJA OPRAVLJENA!',
       winsub:'VSEH OSEM STOPENJ ZA TABO',again:'PRITISNI ENTER ZA NOVO IGRO',
       sending:'POŠILJAM…',sent:'SHRANJENO NA SPLETU!',failed:'BREZ POVEZAVE — SHRANJENO LOKALNO',
-      offline:'BREZ POVEZAVE — LE LOKALNI REZULTATI',loading:'NALAGAM LESTVICO…',newrec:'NOV REKORD!',
+      offline:'BREZ POVEZAVE — LE LOKALNI REZULTATI',empty:'SPLETNA LESTVICA JE PRAZNA — BODI PRVI!',loading:'NALAGAM LESTVICO…',newrec:'NOV REKORD!',
       extra:'DODATNO ŽIVLJENJE!',pause:'PAVZA'},
   de:{sub:'ACHT STUFEN HINTER DEN FEINDLINIEN',start:'ENTER DRÜCKEN  /  TIPPEN ZUM START',
       choose:'ENTER = 1 SPIELER    2 = ZWEI SPIELER (ABWECHSELND)',
@@ -159,7 +159,7 @@ const STR={
       over:'SPIEL VORBEI',reached:'ERREICHTE STUFE',win:'MISSION ERFÜLLT!',
       winsub:'ALLE ACHT STUFEN GESCHAFFT',again:'ENTER FÜR EIN NEUES SPIEL',
       sending:'SENDE…',sent:'ONLINE GESPEICHERT!',failed:'OFFLINE — LOKAL GESPEICHERT',
-      offline:'OFFLINE — NUR LOKALE PUNKTE',loading:'LADE BESTENLISTE…',newrec:'NEUER REKORD!',
+      offline:'OFFLINE — NUR LOKALE PUNKTE',empty:'ONLINE-TABELLE IST LEER — SEI DER ERSTE!',loading:'LADE BESTENLISTE…',newrec:'NEUER REKORD!',
       extra:'EXTRALEBEN!',pause:'PAUSE'},
   it:{sub:'OTTO LIVELLI DIETRO LE LINEE NEMICHE',start:'PREMI INVIO  /  TOCCA PER INIZIARE',
       choose:'INVIO = 1 GIOCATORE    2 = DUE GIOCATORI (A TURNO)',
@@ -173,7 +173,7 @@ const STR={
       over:'GAME OVER',reached:'LIVELLO RAGGIUNTO',win:'MISSIONE COMPIUTA!',
       winsub:'TUTTI E OTTO I LIVELLI SUPERATI',again:'PREMI INVIO PER RIGIOCARE',
       sending:'INVIO…',sent:'SALVATO ONLINE!',failed:'OFFLINE — SALVATO IN LOCALE',
-      offline:'OFFLINE — SOLO PUNTEGGI LOCALI',loading:'CARICO LA CLASSIFICA…',newrec:'NUOVO RECORD!',
+      offline:'OFFLINE — SOLO PUNTEGGI LOCALI',empty:'CLASSIFICA ONLINE VUOTA — SII IL PRIMO!',loading:'CARICO LA CLASSIFICA…',newrec:'NUOVO RECORD!',
       extra:'VITA EXTRA!',pause:'PAUSA'},
   fr:{sub:'HUIT NIVEAUX DERRIÈRE LES LIGNES',start:'APPUIE SUR ENTRÉE  /  TOUCHE POUR JOUER',
       choose:'ENTRÉE = 1 JOUEUR    2 = DEUX JOUEURS (À TOUR DE RÔLE)',
@@ -187,7 +187,7 @@ const STR={
       over:'PARTIE TERMINÉE',reached:'NIVEAU ATTEINT',win:'MISSION ACCOMPLIE !',
       winsub:'LES HUIT NIVEAUX DERRIÈRE TOI',again:'ENTRÉE POUR REJOUER',
       sending:'ENVOI…',sent:'ENREGISTRÉ EN LIGNE !',failed:'HORS LIGNE — ENREGISTRÉ EN LOCAL',
-      offline:'HORS LIGNE — SCORES LOCAUX',loading:'CHARGEMENT DU CLASSEMENT…',newrec:'NOUVEAU RECORD !',
+      offline:'HORS LIGNE — SCORES LOCAUX',empty:'CLASSEMENT EN LIGNE VIDE — SOIS LE PREMIER!',loading:'CHARGEMENT DU CLASSEMENT…',newrec:'NOUVEAU RECORD !',
       extra:'VIE SUPPLÉMENTAIRE !',pause:'PAUSE'}
 };
 function detectLang(){
@@ -985,7 +985,9 @@ function drawEnd(){
 }
 function drawBoard(top,rows){
   if(boardState==='loading'){ shadowText(T('loading'),W/2,top+20,12,'#9ad284'); return; }
-  const online = boardState==='ok' && boardRows && boardRows.length;
+  /* Connected is not the same as full: a board that answered and simply has
+     no scores in it yet is not offline. */
+  const online = boardState==='ok' && !!boardRows;
   const list = online? boardRows.slice(0,rows) : localScores.slice(0,rows);
   shadowText(T('board'),W/2,top,13,'#9ad284');
   X.fillStyle='rgba(154,210,132,.3)'; X.fillRect(W/2-140,top+11,280,1);
@@ -997,6 +999,7 @@ function drawBoard(top,rows){
     shadowText(String(h.s),W/2+130,y,12,'#ffd23b','right');
   });
   if(!online) shadowText(T('offline'),W/2,top+34+rows*19,9,'#e08a5a');
+  else if(!list.length) shadowText(T('empty'),W/2,top+34+rows*19,9,'#8ef0a0');
 }
 
 /* ---------------- score board ---------------- */
