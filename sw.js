@@ -8,7 +8,7 @@
    app here can see every other app's caches. Only ever delete our own — the
    prefix check is what stops one game from wiping another game's cache. */
 const PREFIX  = 'sgt-ruka-';
-const VERSION = PREFIX + 'v99';
+const VERSION = PREFIX + 'v4';
 const SHELL = [
   './',
   './index.html',
